@@ -16,16 +16,18 @@ server.registerTool(
   {
     title: "Fetch PR Data",
     description: "Fetch pull request details from GitHub",
-    inputSchema: z.object({
+    // McpServer expects raw Zod shapes (plain objects) here; the server will call z.object(shape)
+    // internally. Passing a Zod schema instance causes runtime validation errors.
+    inputSchema: {
       owner: z.string(),
       repo: z.string(),
       prNumber: z.number()
-    }),
-    outputSchema: z.object({
+    },
+    outputSchema: {
       title: z.string(),
       description: z.string(),
       filesChanged: z.array(z.string())
-    })
+    }
   },
   async ({ owner, repo, prNumber }) => {
     const headers = { Authorization: `Bearer ${GITHUB_TOKEN}` };
@@ -61,16 +63,16 @@ server.registerTool(
   {
     title: "Post PR Comment",
     description: "Post a comment to GitHub pull request",
-    inputSchema: z.object({
+    inputSchema: {
       owner: z.string(),
       repo: z.string(),
       prNumber: z.number(),
       comment: z.string()
-    }),
-    outputSchema: z.object({
+    },
+    outputSchema: {
       status: z.number(),
       message: z.string()
-    })
+    }
   },
   async ({ owner, repo, prNumber, comment }) => {
     const url = `https://api.github.com/repos/${owner}/${repo}/issues/${prNumber}/comments`;
@@ -106,11 +108,12 @@ server.registerPrompt(
   {
     title: "Analyze Pull Request",
     description: "Analyze a pull request for style and compliance",
-    argsSchema: z.object({
+    // Pass a raw shape; McpServer will wrap it with z.object().
+    argsSchema: {
       title: z.string(),
       description: z.string(),
       filesChanged: z.array(z.string())
-    })
+    }
   },
   ({ title, description, filesChanged }) => {
     const lines = [
@@ -154,3 +157,4 @@ Please address any ❌ items before merge.
   const transport = new StdioServerTransport();
   await server.connect(transport);
 })();
+
